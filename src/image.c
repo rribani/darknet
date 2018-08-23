@@ -245,9 +245,10 @@ void draw_detections(image im, detection *dets, int num, float thresh, char **na
         int class = -1;
         for(j = 0; j < classes; ++j){
             if (dets[i].prob[j] > thresh){
-                if (class < 0) {
+                if (class < 0) { // The class will be > 0 only if we have two similar probabilities for the same bbox
                     strcat(labelstr, names[j]);
                     class = j;
+                    break; // <<<--- So adding this break because of the performance. We show only the first.
                 } else {
                     strcat(labelstr, ", ");
                     strcat(labelstr, names[j]);
@@ -712,11 +713,11 @@ void save_image_png(image im, const char *name)
 
 void save_image(image im, const char *name)
 {
-#ifdef OPENCV
-    save_image_jpg(im, name);
-#else
+// #ifdef OPENCV
+//     save_image_jpg(im, name);
+// #else
     save_image_png(im, name);
-#endif
+// #endif
 }
 
 
