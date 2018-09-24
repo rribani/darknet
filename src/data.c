@@ -145,20 +145,23 @@ box_label *read_boxes(char *filename, int *n)
     int size = 64;
     box_label *boxes = calloc(size, sizeof(box_label));
     while(fscanf(file, "%d %f %f %f %f", &id, &x, &y, &w, &h) == 5){
-        if(count == size) {
-            size = size * 2;
-            boxes = realloc(boxes, size*sizeof(box_label));
+        if (id == 17) {
+            if(count == size) {
+                size = size * 2;
+                boxes = realloc(boxes, size*sizeof(box_label));
+            }
+            boxes[count].id = id;
+            boxes[count].x = x;
+            boxes[count].y = y;
+            boxes[count].h = h;
+            boxes[count].w = w;
+            boxes[count].left   = x - w/2;
+            boxes[count].right  = x + w/2;
+            boxes[count].top    = y - h/2;
+            boxes[count].bottom = y + h/2;
+            ++count;
+
         }
-        boxes[count].id = id;
-        boxes[count].x = x;
-        boxes[count].y = y;
-        boxes[count].h = h;
-        boxes[count].w = w;
-        boxes[count].left   = x - w/2;
-        boxes[count].right  = x + w/2;
-        boxes[count].top    = y - h/2;
-        boxes[count].bottom = y + h/2;
-        ++count;
     }
     fclose(file);
     *n = count;
