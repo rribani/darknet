@@ -1,4 +1,5 @@
 #include "darknet.h"
+#include "serial.h"
 
 static int coco_ids[] = {1,2,3,4,5,6,7,8,9,10,11,13,14,15,16,17,18,19,20,21,22,23,24,25,27,28,31,32,33,34,35,36,37,38,39,40,41,42,43,44,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,67,70,72,73,74,75,76,77,78,79,80,81,82,84,85,86,87,88,89,90};
 
@@ -559,7 +560,7 @@ void validate_detector_recall(char *cfgfile, char *weightfile)
 }
 
 
-void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filename, float thresh, float hier_thresh, char *outfile, int fullscreen)
+void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filename, float thresh, float hier_thresh, char *outfile, int fullscreen, int serial)
 {
     list *options = read_data_cfg(datacfg);
     char *name_list = option_find_str(options, "names", "data/names.list");
@@ -577,6 +578,11 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
 	nnp_initialize();
 	net->threadpool = pthreadpool_create(4);
 #endif
+
+    if (serial) {
+        fillPatternsMap();
+        open_port();        
+    }
 
     while(1){
         if(filename){
@@ -612,6 +618,9 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
 
         //if (nms) do_nms_obj(boxes, probs, l.w*l.h*l.n, l.classes, nms);
         if (nms) do_nms_sort(dets, nboxes, l.classes, nms);
+        if (serial) {
+            serialize_detections(im, dets, nboxes, thresh, names, alphabet, l.classes);
+        }
         draw_detections(im, dets, nboxes, thresh, names, alphabet, l.classes);
         free_detections(dets, nboxes);
         if(outfile){
@@ -628,6 +637,9 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
         free_image(im);
         free_image(sized);
         if (filename) break;
+    }
+    if (serial) {
+        close_port();
     }
 #ifdef NNPACK
 	pthreadpool_destroy(net->threadpool);
@@ -842,6 +854,7 @@ void run_detector(int argc, char **argv)
     int width = find_int_arg(argc, argv, "-w", 0);
     int height = find_int_arg(argc, argv, "-h", 0);
     int fps = find_int_arg(argc, argv, "-fps", 0);
+    int serial = find_int_arg(argc, argv, "-serial", 0);
     //int class = find_int_arg(argc, argv, "-class", 0);
 
     char *datacfg = argv[3];
@@ -849,7 +862,7 @@ void run_detector(int argc, char **argv)
     char *weights = (argc > 5) ? argv[5] : 0;
     char *filename = (argc > 6) ? argv[6]: 0;
 
-    if(0==strcmp(argv[2], "test")) test_detector(datacfg, cfg, weights, filename, thresh, hier_thresh, outfile, fullscreen);
+    if(0==strcmp(argv[2], "test")) test_detector(datacfg, cfg, weights, filename, thresh, hier_thresh, outfile, fullscreen, serial);
     else if(0==strcmp(argv[2], "train")) train_detector(datacfg, cfg, weights, gpus, ngpus, clear);
     else if(0==strcmp(argv[2], "valid")) validate_detector(datacfg, cfg, weights, outfile);
     else if(0==strcmp(argv[2], "valid2")) validate_detector_flip(datacfg, cfg, weights, outfile);

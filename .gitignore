@@ -18,6 +18,11 @@ submission/
 cfg/
 darknet
 .fuse*
+.vscode/**
+libdarknet.a
+libdarknet.so
+workspace/**
+*.weights
 
 # OS Generated #
 .DS_Store*
